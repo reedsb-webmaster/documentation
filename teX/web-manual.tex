@@ -1,0 +1,288 @@
+\documentclass[a4paper]{article}
+\input{preamble/preamble.tex}
+
+\title{The Webmaster Web Development Manual}
+\author{Reed College}
+\date{Spring 2021}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\textbf{What is the Website?}
+\end{center}
+The "website" effectively works by maintaining and ensuring the health of two interplaying elements:
+
+\begin{enumerate}
+  \item $\textbf{Github Webstack}$
+    \begin{enumerate}
+      \item The website source files are files found in the website directory, which can be found by logging on the GoDaddy website and accessing the file directory through cPanel.
+      \item The website is updated by using the Git Version control feature on cPanel.
+      \item The source code can be found in /reedsb-webmaster/reedsb.com. The Github account should have the same credentials as the primary Webmaster G-mail account.
+    \end{enumerate}
+  \item $\textbf{Firebase Database}$
+    \begin{enumerate}
+      \item The other element is the website-specific Firebase database collections. Firebase is a service provided by Google that hosts databases which has pre-exisiting infastructure for read/write abilities on data the website utilizes.
+      \item Firebase can be accessed by using any of your Google accounts. However, you must share the /sin-app-reed/ project to that e-mail to be able to do so.
+    \end{enumerate}
+\end{enumerate}
+
+%====================================================================
+%====================================================================
+\newpage
+\section{Webstack}
+
+The webstack is the source code that repersents the website. There are a few things worth noting. First, note that the website HTML files are actually contained in /en-us/. This was done in order to allow the website to be sourced from Github. So, while the domain may appear to be $\reedsb$, the actual domain is $\reedsbenus$ and is rerouted from the former domain.
+
+As a result of this architecture, there is a subtle matter that is critical to take care of.
+
+\begin{warning*}
+If you find yourself needing to remove and pull the public-html directory from Github for whatever reason, you MUST reset the permissions of the folder. This can be done in cPanel. To reset permissions, right-click the public-html directory and set the permissions to 755, manually editing the permissions. If this is not done, you will probably recieve a 403 permission error when trying to enter the website.
+\end{warning*}
+
+\subsection{Dashdoor}
+Dashdoor is the adminstrative backend of the website. The Treasurers need dash-door privilages to access it. This can be modified in the $\config$ in the $\appjs$ file. More detailed instruction on this process are given below.
+
+%====================================================================
+%====================================================================
+
+\newpage
+\section{Firebase}
+
+The website works on a free subscription leasing database space from Google Firebase. The databases are needed to store information for
+running elections, funding poll, and other semester data Treasury needs. In the current website implementation, there are seven primary database collections. They are listed below along with a short description of their purposes.
+
+\begin{enumerate}
+  \item elections: event-indexed collections of the past and current student body election.
+  \item polls: event-indexed collections of the past and current funding poll.
+  \item nominations: dataset array containing nominee-submitted information about each candidate.
+  \item users-who-have-voted: event-indexed collections of the users who have voted in the funding polls and elections.
+  \item signatories: semester-dependent collection of all currently approved signators.
+  \item registered-clubs: semester-dependent collection of all currently registered clubs.
+  \item fund-requests: semester-dependent collection of all the signator-submitted funding requests.
+\end{enumerate}
+
+The database collections may be partioned into two primary subsets. The semester dependent subset and the non-semester dependent subset.
+
+\begin{definition*}[Semester-Dependence]
+A semester-dependent database collection is any collection that is contingent on the current semester. For these database collections, the website will read the collection corrosponding to the current semester declared in the website's configuration.
+\end{definition*}
+
+\begin{center}
+\begin{tabular}{ |p{4cm}||p{4cm}|  }
+ \hline
+ \multicolumn{2}{|c|}{Table of Database Collections} \\
+ \hline
+ Collection & Semester-Dependent? \\
+ \hline
+ signatories & Yes \\
+ registered-clubs & Yes \\
+ fund-requests & Yes \\
+ \hline
+ elections & No \\
+ polls & No \\
+ users-who-have-voted & No \\
+ nominations & No \\
+ \hline
+\end{tabular}
+\end{center}
+
+% \medskip
+% \begin{center}
+% \textbf{Semester Dependent Collections}
+% \end{center}
+%
+% \begin{enumerate}
+%   \item signatories
+%   \item registered-clubs
+%   \item fund-requests
+% \end{enumerate}
+
+\begin{note*}[Semester Subcollections]
+Every semester dependent collection has subcollections which are named the semester-specific strings. For continuity, please ensure the string takes the form: [semester] = \textit{term-year}.
+\end{note*}
+
+\begin{example*}[Semester Naming]
+The string name for the any semester dependent subcollection for the Fall 2020 semester is [\textit{fall-2020}].
+\end{example*}
+
+% \medskip
+% \begin{center}
+% \textbf{Event-indexed (Non-semester depdendent)}
+% \end{center}
+%
+% \begin{enumerate}
+%   \item elections
+%   \item polls
+%   \item users-who-have-voted
+%   \item nominations
+% \end{enumerate}
+
+\begin{note*}[Event Collections] We can also name the non-semester depedent collections the set of event-indexed collections. The reason is because every subcollection in these collections has a name which takes the form:
+$$\textit{event-[semester]-SHA32id}$$
+\end{note*}
+
+\noindent To explain the various of that naming, we break down the label into three parts.
+
+% \medskip
+\begin{center}
+\textbf{Event Naming Breakdown}
+\end{center}
+\begin{enumerate}
+  \item The event is a two letter index of whether the event is a funding poll $(fp)$ or an SB election $(se)$.
+  \item The semester is simply the string as explained above, as follows: $[semester] = \textit{term-year}$.
+  \item Lastly, the SHA32 index is simply a random SHA32 hash that uniquely identifies every (semester, event) pair.
+\end{enumerate}
+
+\begin{example*}[Event Naming]
+The funding poll happening in Fall 2020 with a SHA32 ID of ABC will be: \textit{fp-fall-2020-ABC}.
+\end{example*}
+For continuity, please ensure every event-indexed collection has subcollection names which take the form: $\textit{event-[semester]-SHA32id}$.
+
+%====================================================================
+%====================================================================
+
+\newpage
+\section{Maintainence}
+%====================================================================
+\subsection{Regular Maintainence Routines}
+%====================================================================
+
+
+\begin{center}
+\textbf{(A) Updating the Website Codebase}
+\end{center}
+
+Updating the website may be tricky at first but it should be easy once the Webmaster does a few practice tries. The standard routine of updating the website should $\textbf{NOT}$ involve directly editing the files on cPanel. Doing so will create some large issues with Github version control in the future. Instead, please use Git or install Github Desktop (more user-friendly) and have a local copy of the website directory installed. Then, the Webmaster may edit the repository and propogate the changes through Github by using the cPanel version control menu.
+
+Suppose the Webmaster implements changes to a local copy of the website on their device. Once the changes are done, the Webmaster should build the $\appminjs$ script if $\appjs$ is edited. Otherwise, push the changes onto the Github Repository. Then, log on to the GoDaddy website, and find the cPanel Adminstrator Panel. Then, find the 'Update from Remote' button by taking the following path below. Once done, that should update the website.
+\begin{center}
+'Github Version Control' $\ra$ 'Manage' $\ra$ 'Pull $\&$ Deploy' $\ra$ 'Update from Remote'
+\end{center}
+
+So, to summarize, here is how you update the website.
+
+\begin{enumerate}
+  \item Make your changes to the website code on your local Github repository and push your changes.
+  \item Run the website building script in terminal
+  \item In cPanel version control, pull the recent changes you've made by pressing 'Update from Remote'.
+\end{enumerate}
+
+%====================================================================
+
+\begin{center}
+\textbf{(B) Semester Updates}
+\end{center}
+
+Before every semester begins, change the $\config$ expression in $\appjs$ to reflect the current semester. Then, ensure every semester dependent collection has a collection pertaining to the new semester. Note that $\textbf{this must be done manually}$ by the Webmaster(s). Recall that the semester name must follow the form:
+$$[semester] = \textit{term-year}$$
+
+For reference, these are the semester dependent collections:
+
+\begin{center}
+\begin{tabular}{ |p{4cm}||p{4cm}|  }
+ \hline
+ \multicolumn{2}{|c|}{Table of Database Collections} \\
+ \hline
+ Collection & Semester-Dependent? \\
+ \hline
+ signatories & Yes \\
+ registered-clubs & Yes \\
+ fund-requests & Yes \\
+ \hline
+\end{tabular}
+\end{center}
+
+Here are more direct instructions for the semester change routine. The process should be clearer once the Webmaster explores the collections of previous semesters. Implementation of the new semesters should not be any different.
+
+\begin{enumerate}
+  \item In $\appjs$, the main code file, find the $\config$ expression and rename the semester to the current $[semester]$ string.
+  \item In Firebase, go to each semester-dependent collection and add a new collection for that semester using the exact same $[semester]$ string.
+  \item Then, within each collection, create an $\textbf{empty}$ array with the same name as that master collection. For example, if you are updating $signatories$, you will create a new empty $signatories$ array in the new semester collection.
+  \item Update the website as in Routine A.
+\end{enumerate}
+
+\begin{center}
+\textbf{Dashdoor Permissions}
+\end{center}
+
+Every semester, Reed Treasury rotates and adds new members. These new members will ask for permission to Dashdoor, the adminstrative backdoor of the website. To give those users permission, you must edit the $\config$ and add the relevant emails to the 'authorised-users' array. Then, remember to build the script and update the website as in Routine A. So, to add someone with the $[email]$ to dashdoor, here's what you need to do.
+
+\begin{enumerate}
+  \item Add [email] to the array of authorised-users in the $\config$
+  \item Update the website as in Routine A.
+\end{enumerate}
+
+%====================================================================
+\subsection{Event Running Routines}
+%====================================================================
+
+As the website is used to host events like Student Body Elections and Funding Poll, we document the process of setting up these events below.
+
+\begin{warning*}
+The funding poll and student body elections applets do not seem to be functional as of Fall 2020. Also worth noting is that the parameter $direct-server-load$ in the $\config$ file seems to crash the website when set to $false$.
+\end{warning*}
+
+\begin{center}
+\textbf{Running Funding Poll}
+\end{center}
+
+Some manual steps are necessary to run a funding poll event.
+
+\begin{enumerate}
+  \item Edit the time parameters $\textit{fpopens}$ and $\textit{fpcloses}$ in the $\config$ to ensure funding poll is open and closed at the right times. These parameters are determined by the Treasury.
+
+  \item Change the $\textit{poll-name}$ entry in the $\config$ file to reflect the current funding poll ID. Recall that it must follow the form:
+  $$\textit{fp-[semester]-SHA32id}$$
+\end{enumerate}
+
+%====================================================================
+
+\begin{center}
+\textbf{Running Student Body Elections}
+\end{center}
+
+\begin{enumerate}
+  \item Edit the time parameters $\textit{seopens}$ and $\textit{secloses}$ in the $\config$ to ensure that the SB elections is open and closed at the right times. These parameters are determined by the Senate.
+
+  \item Change the $\textit{secampaign}$ entry in the $\config$ file to reflect the current senate election ID. Recall that it must follow the form:
+  $$\textit{se-[semester]-SHA32id}$$
+\end{enumerate}
+
+%====================================================================
+\begin{center}
+\textbf{Gaps in Information}
+\end{center}
+
+Since the current Webmasters are new, we have never fully tested funding poll and the elections app. There may be some gaps in our knowledge but this is documenting all we know to the best of our abilities. Here are some things to consider learning about:
+
+\begin{enumerate}
+  \item How does club registration interplay with funding poll? We know that given a semester, the funding poll depends on the clubs registered in the database for that semester. But, the relationship and interplay is unclear.
+  \item A similar question is asked about Senate elections and the campaigns database.
+\end{enumerate}
+
+%====================================================================
+%====================================================================
+\newpage
+\section{Tips}
+
+Here are a few tips!
+\begin{enumerate}
+  \item If you need to reconfigure the website DNS, you should go to GoDaddy DNS. You shouldn't need to do this though. However, in case you are updating the Google Firebase domain, you may need to add a TXT record with the authentication there.
+  \item Manually resetting the cache is your best friend.
+\end{enumerate}
+
+%====================================================================
+%====================================================================
+\newpage
+\section{Subroutines}
+
+Here is a comprehensive list of low-level subroutines the Webmasters will commonly use. Feel free to use this reference and augment it with any useful subroutines you may find.
+
+\begin{center}
+\textbf{Building app.min.js}
+\end{center}
+
+To build the $\appminjs$ script, proceed to the directory containing $\textit{build.sh}$. On terminal (assuming you have a bash shell), execute the script by writing:
+$$\textit{bash build.sh}$$
+\end{document}
